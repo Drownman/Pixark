@@ -1,0 +1,45 @@
+---
+_schema-version: '3.1'
+ID: HC_OFFICE_SUPLLIES
+version: 1.0.0
+description: "A simple CAP project."
+parameters:
+  enable-parallel-deployments: true
+build-parameters:
+  before-all:
+    - builder: custom
+      commands:
+        - npm ci
+        - npx -p @sap/cds-dk cds build --production
+
+modules:
+  - name: HC_OFFICE_SUPLLIES-srv
+    type: nodejs
+    path: gen/srv
+    parameters:
+      buildpack: nodejs_buildpack
+    build-parameters:
+      builder: npm-ci
+    provides:
+      - name: srv-api # required by consumers of CAP services (e.g. approuter)
+        properties:
+          srv-url: ${default-url}
+    requires:
+      - name: HC_OFFICE_SUPLLIES-db
+
+  - name: HC_OFFICE_SUPLLIES-db-deployer
+    type: hdb
+    path: gen/db
+    parameters:
+      buildpack: nodejs_buildpack
+    requires:
+      - name: HC_OFFICE_SUPLLIES-db
+
+resources:
+  - name: HC_OFFICE_SUPLLIES-db
+    type: com.sap.xs.hdi-container
+    parameters:
+      service: hana # or 'hanatrial' on trial landscapes
+      service-plan: hdi-shared
+    properties:
+      hdi-service-name: ${service-name}
